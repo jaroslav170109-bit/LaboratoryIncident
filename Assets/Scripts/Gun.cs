@@ -14,10 +14,6 @@ public class Gun : Sounds
     public int totalAmmo = 60;
     public TextMeshProUGUI ammoDisplay;
 
-    [Header("Редкий монстр (1/8)")]
-    public RareMonster rareMonster; // Ссылка на скрипт редкого монстра
-    private bool hasMonsterSpawned = false; // Чтобы спавн был только 1 раз
-
     [Header("Эффекты")]
     public UnityEvent onGunShoot;
 
@@ -33,7 +29,9 @@ public class Gun : Sounds
 
     void Update()
     {
+        // Проверка на паузу (убедись, что скрипт PauseManager у тебя уже есть)
         if (PauseManager.isPaused) return;
+
         if (currentCooldown > 0f)
             currentCooldown -= Time.deltaTime;
 
@@ -58,26 +56,17 @@ public class Gun : Sounds
         totalAmmo--;
         UpdateAmmoUI();
 
+        // Проигрываем звук выстрела (первый в списке)
         if (sounds != null && sounds.Length > 0 && sounds[0] != null)
             PlaySound(sounds[0]);
 
         onGunShoot?.Invoke();
 
-        // --- РУЛЕТКА:
-        if (!hasMonsterSpawned && rareMonster != null)
-        {
-            int chance = Random.Range(0, 4); // Выдаст число 
-            if (chance == 0) 
-            {
-                rareMonster.ActivateMonster();
-                hasMonsterSpawned = true; // Больше не появится
-            }
-        }
-        // ------------------------------
-
+        // Стрельба лучом (Raycast)
         Ray gunRay = new Ray(playerCamera.position, playerCamera.forward);
         if (Physics.Raycast(gunRay, out RaycastHit hitInfo, bulletRange))
         {
+            // Наносим урон, если у объекта есть компонент Entity
             if (hitInfo.collider.gameObject.TryGetComponent(out Entity enemy))
             {
                 enemy.Health -= damage;
@@ -93,6 +82,7 @@ public class Gun : Sounds
     private void PlayEmptySound()
     {
         currentCooldown = fireCooldown;
+        // Проигрываем звук пустого магазина (второй в списке)
         if (sounds != null && sounds.Length > 1 && sounds[1] != null)
             PlaySound(sounds[1]);
     }
