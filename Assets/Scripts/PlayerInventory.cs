@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using TMPro; // Если используешь TextMeshPro
+using TMPro;
 
 public class PlayerInventory : MonoBehaviour
 {
@@ -7,9 +7,9 @@ public class PlayerInventory : MonoBehaviour
     public Transform handPosition;
     public float pickupRange = 3f;
 
-    [Header("Интерфейс")]
-    public GameObject hintObject; // Объект с текстом (например, "Нажмите E чтобы взять")
-    public TextMeshProUGUI itemText; // (Опционально) чтобы менять название предмета
+    [Header("Интерфейс: Подсказка (при наведении)")]
+    public GameObject hintObject; // Родительский объект подсказки
+    public TextMeshProUGUI itemText; // Текст с названием предмета
 
     public PickupableItem currentItem = null;
     private Transform playerCamera;
@@ -17,16 +17,27 @@ public class PlayerInventory : MonoBehaviour
     void Start()
     {
         playerCamera = Camera.main.transform;
+
+        // Скрываем подсказку при запуске
         if (hintObject != null) hintObject.SetActive(false);
     }
 
     void Update()
     {
-        // 1. Проверка луча для подсказки
+        // Постоянно проверяем, куда смотрит игрок
         CheckForItems();
 
-        if (Input.GetKeyDown(KeyCode.E)) TryPickUp();
-        if (Input.GetKeyDown(KeyCode.Q) && currentItem != null) DropItem();
+        // Подбор предмета
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            TryPickUp();
+        }
+
+        // Выбрасывание предмета
+        if (Input.GetKeyDown(KeyCode.Q) && currentItem != null)
+        {
+            DropItem();
+        }
     }
 
     private void CheckForItems()
@@ -34,35 +45,44 @@ public class PlayerInventory : MonoBehaviour
         Ray ray = new Ray(playerCamera.position, playerCamera.forward);
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit, pickupRange))
+        // ЛОГИКА "КАК У ДВЕРИ":
+        // Если луч попал в объект И у него есть компонент PickupableItem
+        if (Physics.Raycast(ray, out hit, pickupRange) && hit.collider.TryGetComponent(out PickupableItem item))
         {
-            if (hit.collider.TryGetComponent(out PickupableItem item))
+            // ВКЛЮЧАЕМ текст, если мы смотрим на предмет
+            if (hintObject != null)
             {
-                // Если навелись на предмет
-                if (hintObject != null) hintObject.SetActive(true);
-
-                // Если хочешь динамическое название (например: "Взять Отвертку")
-                if (itemText != null) itemText.text = "Взять " + item.itemName;
-
-                return; // Выходим из метода, чтобы не выключить текст ниже
+                hintObject.SetActive(true);
+                if (itemText != null) itemText.text = item.itemName;
             }
         }
-
-        // Если луч никуда не попал или попал не в предмет — выключаем текст
-        if (hintObject != null) hintObject.SetActive(false);
+        else
+        {
+            // ВЫКЛЮЧАЕМ текст во всех остальных случаях (смотрим в стену, в пол или в небо)
+            if (hintObject != null && hintObject.activeSelf)
+            {
+                hintObject.SetActive(false);
+            }
+        }
     }
 
     private void TryPickUp()
     {
         Ray ray = new Ray(playerCamera.position, playerCamera.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit, pickupRange))
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, pickupRange))
         {
             if (hit.collider.TryGetComponent(out PickupableItem newItem))
             {
+                // Если в руках уже что-то есть — выбрасываем
                 if (currentItem != null) DropItem();
+
+                // Берем новый предмет
                 currentItem = newItem;
                 currentItem.PickUp(handPosition);
-                // Скрываем текст после подбора
+
+                // Сразу выключаем подсказку, чтобы она не "висела" на поднятом предмете
                 if (hintObject != null) hintObject.SetActive(false);
             }
         }
@@ -70,7 +90,10 @@ public class PlayerInventory : MonoBehaviour
 
     private void DropItem()
     {
-        currentItem.Drop(playerCamera);
-        currentItem = null;
+        if (currentItem != null)
+        {
+            currentItem.Drop(playerCamera);
+            currentItem = null;
+        }
     }
 }
