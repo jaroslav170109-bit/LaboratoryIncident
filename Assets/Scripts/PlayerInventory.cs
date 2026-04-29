@@ -1,53 +1,69 @@
 ﻿using UnityEngine;
+using TMPro; // Если используешь TextMeshPro
 
 public class PlayerInventory : MonoBehaviour
 {
     [Header("Настройки подбора")]
-    public Transform handPosition; // Точка, где будет висеть предмет
-    public float pickupRange = 3f; // Дистанция, с которой можно взять предмет
+    public Transform handPosition;
+    public float pickupRange = 3f;
 
-    private PickupableItem currentItem = null; // Предмет, который сейчас в руках
+    [Header("Интерфейс")]
+    public GameObject hintObject; // Объект с текстом (например, "Нажмите E чтобы взять")
+    public TextMeshProUGUI itemText; // (Опционально) чтобы менять название предмета
+
+    public PickupableItem currentItem = null;
     private Transform playerCamera;
 
     void Start()
     {
-        // Находим главную камеру автоматически
         playerCamera = Camera.main.transform;
+        if (hintObject != null) hintObject.SetActive(false);
     }
 
     void Update()
     {
-        // Кнопка подбора (E)
-        if (Input.GetKeyDown(KeyCode.E))
+        // 1. Проверка луча для подсказки
+        CheckForItems();
+
+        if (Input.GetKeyDown(KeyCode.E)) TryPickUp();
+        if (Input.GetKeyDown(KeyCode.Q) && currentItem != null) DropItem();
+    }
+
+    private void CheckForItems()
+    {
+        Ray ray = new Ray(playerCamera.position, playerCamera.forward);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, pickupRange))
         {
-            TryPickUp();
+            if (hit.collider.TryGetComponent(out PickupableItem item))
+            {
+                // Если навелись на предмет
+                if (hintObject != null) hintObject.SetActive(true);
+
+                // Если хочешь динамическое название (например: "Взять Отвертку")
+                if (itemText != null) itemText.text = "Взять " + item.itemName;
+
+                return; // Выходим из метода, чтобы не выключить текст ниже
+            }
         }
 
-        // Кнопка сброса (Q)
-        if (Input.GetKeyDown(KeyCode.Q) && currentItem != null)
-        {
-            DropItem();
-        }
+        // Если луч никуда не попал или попал не в предмет — выключаем текст
+        if (hintObject != null) hintObject.SetActive(false);
     }
 
     private void TryPickUp()
     {
-        // Пускаем луч из центра камеры вперед
         Ray ray = new Ray(playerCamera.position, playerCamera.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, pickupRange))
         {
-            // Если луч попал в объект со скриптом PickupableItem
             if (hit.collider.TryGetComponent(out PickupableItem newItem))
             {
-                // Если мы уже что-то держим - сначала выкидываем старое
-                if (currentItem != null)
-                {
-                    DropItem();
-                }
-
-                // Подбираем новое
+                if (currentItem != null) DropItem();
                 currentItem = newItem;
                 currentItem.PickUp(handPosition);
+                // Скрываем текст после подбора
+                if (hintObject != null) hintObject.SetActive(false);
             }
         }
     }
