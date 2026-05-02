@@ -18,7 +18,7 @@ public class IntroManager : MonoBehaviour
     public GameObject darknessUI;
 
     [Header("Настройки финала")]
-    public float timeInDarkness = 5f;
+    public float timeInDarkness = 10f;
     public string mainMenuSceneName = "MainMenu";
 
     private void OnEnable()
@@ -51,13 +51,20 @@ public class IntroManager : MonoBehaviour
             yield return new WaitForSeconds(1f);
         }
 
-        // 3. Активируем звук взрыва
-        if (explosionSoundObject != null)
-            explosionSoundObject.SetActive(true);
 
         // 4. Запускаем тряску камеры
         if (cameraAnimator != null)
             cameraAnimator.SetTrigger(shakeTriggerName);
+        // 3. Активируем звук взрыва
+        if (explosionSoundObject != null)
+            explosionSoundObject.SetActive(true);
+        foreach (GameObject sound in initialSounds)
+        {
+            if (sound != null)
+                sound.SetActive(false); // Отключаем начальные звуки
+        }
+
+      
 
         // 5. Включаем темноту (картинку с AudioSource потери сознания)
         if (darknessUI != null)
