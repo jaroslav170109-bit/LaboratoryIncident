@@ -46,7 +46,7 @@ public class PauseManager : MonoBehaviour
     public void LoadMenu()
     {
         Time.timeScale = 1f; // Важно вернуть время в норму перед сменой сцены!
-        SceneManager.LoadScene("Menu"); // Напиши тут имя своей сцены с меню
+        SceneManager.LoadScene("MainMenu"); // Напиши тут имя своей сцены с меню
     }
 
     public void QuitGame()
