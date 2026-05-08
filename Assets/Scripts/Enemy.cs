@@ -16,6 +16,7 @@ public class Enemy : Sounds
     [Header("Настройки")]
     public float catchDistance = 1.5f;
     public float footstepInterval = 0.6f;
+    public string sceneToLoad = "Level 1";
 
     private float footstepTimer;
     private bool isGameOver = false;
@@ -149,6 +150,6 @@ public class Enemy : Sounds
             PlaySound(sounds[2], 1f, false, 0.4f, 0.6f);
 
         yield return new WaitForSeconds(2f);
-        SceneManager.LoadScene("Level 2"); // Убедись, что сцена добавлена в Build Settings
+        SceneManager.LoadScene(sceneToLoad); // Убедись, что сцена добавлена в Build Settings
     }
 }
