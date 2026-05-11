@@ -28,15 +28,25 @@ public class IntroManager : MonoBehaviour
 
     IEnumerator StartIntroSequence()
     {
-        // 1. Активируем звуки по очереди с задержкой
-        foreach (GameObject sound in initialSounds)
+        // 1. Активируем звуки по очереди через цикл for
+        for (int i = 0; i < initialSounds.Length; i++)
         {
-            if (sound != null)
+            if (initialSounds[i] != null)
             {
-                sound.SetActive(true);
+                initialSounds[i].SetActive(true);
+
+                // ПРОВЕРКА: Если это второй элемент (индекс 1) — запускаем тряску
+                if (i == 1 && cameraAnimator != null)
+                {
+                    cameraAnimator.SetTrigger(shakeTriggerName);
+                }
+
                 yield return new WaitForSeconds(delayBetweenSounds);
             }
         }
+
+        // 2. Ждем оставшееся время до взрыва...
+        // (остальная часть кода без изменений)
 
         // 2. Ждем оставшееся время до взрыва
         // Вычитаем время, которое уже потратили на включение звуков, чтобы общая задержка была точной
@@ -53,8 +63,6 @@ public class IntroManager : MonoBehaviour
 
 
         // 4. Запускаем тряску камеры
-        if (cameraAnimator != null)
-            cameraAnimator.SetTrigger(shakeTriggerName);
         // 3. Активируем звук взрыва
         if (explosionSoundObject != null)
             explosionSoundObject.SetActive(true);
