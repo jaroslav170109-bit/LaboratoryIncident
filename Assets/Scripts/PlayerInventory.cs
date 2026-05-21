@@ -8,8 +8,8 @@ public class PlayerInventory : MonoBehaviour
     public float pickupRange = 3f;
 
     [Header("Интерфейс: Подсказка (при наведении)")]
-    public GameObject hintObject; // Родительский объект подсказки
-    public TextMeshProUGUI itemText; // Текст с названием предмета
+    public GameObject hintObject;
+    public TextMeshProUGUI itemText;
 
     public PickupableItem currentItem = null;
     private Transform playerCamera;
@@ -18,22 +18,18 @@ public class PlayerInventory : MonoBehaviour
     {
         playerCamera = Camera.main.transform;
 
-        // Скрываем подсказку при запуске
         if (hintObject != null) hintObject.SetActive(false);
     }
 
     void Update()
     {
-        // Постоянно проверяем, куда смотрит игрок
         CheckForItems();
 
-        // Подбор предмета
         if (Input.GetKeyDown(KeyCode.E))
         {
             TryPickUp();
         }
 
-        // Выбрасывание предмета
         if (Input.GetKeyDown(KeyCode.Q) && currentItem != null)
         {
             DropItem();
@@ -45,11 +41,8 @@ public class PlayerInventory : MonoBehaviour
         Ray ray = new Ray(playerCamera.position, playerCamera.forward);
         RaycastHit hit;
 
-        // ЛОГИКА "КАК У ДВЕРИ":
-        // Если луч попал в объект И у него есть компонент PickupableItem
         if (Physics.Raycast(ray, out hit, pickupRange) && hit.collider.TryGetComponent(out PickupableItem item))
         {
-            // ВКЛЮЧАЕМ текст, если мы смотрим на предмет
             if (hintObject != null)
             {
                 hintObject.SetActive(true);
@@ -58,7 +51,6 @@ public class PlayerInventory : MonoBehaviour
         }
         else
         {
-            // ВЫКЛЮЧАЕМ текст во всех остальных случаях (смотрим в стену, в пол или в небо)
             if (hintObject != null && hintObject.activeSelf)
             {
                 hintObject.SetActive(false);
@@ -75,14 +67,19 @@ public class PlayerInventory : MonoBehaviour
         {
             if (hit.collider.TryGetComponent(out PickupableItem newItem))
             {
-                // Если в руках уже что-то есть — выбрасываем
                 if (currentItem != null) DropItem();
 
-                // Берем новый предмет
                 currentItem = newItem;
                 currentItem.PickUp(handPosition);
 
-                // Сразу выключаем подсказку, чтобы она не "висела" на поднятом предмете
+                // --- НОВАЯ ЛОГИКА ---
+                // Проверяем, есть ли на поднятом предмете скрипт оружия. Если да — разрешаем стрельбу.
+                if (currentItem.TryGetComponent(out Gun gun))
+                {
+                    gun.isEquipped = true;
+                }
+                // ---------------------
+
                 if (hintObject != null) hintObject.SetActive(false);
             }
         }
@@ -92,6 +89,14 @@ public class PlayerInventory : MonoBehaviour
     {
         if (currentItem != null)
         {
+            // --- НОВАЯ ЛОГИКА ---
+            // Перед тем как выбросить, запрещаем оружию стрелять в полете или на полу
+            if (currentItem.TryGetComponent(out Gun gun))
+            {
+                gun.isEquipped = false;
+            }
+            // ---------------------
+
             currentItem.Drop(playerCamera);
             currentItem = null;
         }

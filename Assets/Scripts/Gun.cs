@@ -17,6 +17,9 @@ public class Gun : Sounds
     [Header("Эффекты")]
     public UnityEvent onGunShoot;
 
+    [Header("Состояние (Управляется из инвентаря)")]
+    public bool isEquipped = false; // Флаг: в руках ли оружие
+
     private float currentCooldown;
     private Transform playerCamera;
 
@@ -29,7 +32,10 @@ public class Gun : Sounds
 
     void Update()
     {
-        // Проверка на паузу (убедись, что скрипт PauseManager у тебя уже есть)
+        // ПРОВЕРКА 1: Если пистолет не в руках — стрелять нельзя
+        if (!isEquipped) return;
+
+        // ПРОВЕРКА 2: Проверка на паузу
         if (PauseManager.isPaused) return;
 
         if (currentCooldown > 0f)
@@ -56,17 +62,14 @@ public class Gun : Sounds
         totalAmmo--;
         UpdateAmmoUI();
 
-        // Проигрываем звук выстрела (первый в списке)
         if (sounds != null && sounds.Length > 0 && sounds[0] != null)
             PlaySound(sounds[0]);
 
         onGunShoot?.Invoke();
 
-        // Стрельба лучом (Raycast)
         Ray gunRay = new Ray(playerCamera.position, playerCamera.forward);
         if (Physics.Raycast(gunRay, out RaycastHit hitInfo, bulletRange))
         {
-            // Наносим урон, если у объекта есть компонент Entity
             if (hitInfo.collider.gameObject.TryGetComponent(out Entity enemy))
             {
                 enemy.Health -= damage;
@@ -82,7 +85,6 @@ public class Gun : Sounds
     private void PlayEmptySound()
     {
         currentCooldown = fireCooldown;
-        // Проигрываем звук пустого магазина (второй в списке)
         if (sounds != null && sounds.Length > 1 && sounds[1] != null)
             PlaySound(sounds[1]);
     }
