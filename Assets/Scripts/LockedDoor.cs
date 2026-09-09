@@ -8,6 +8,7 @@ public class LockedDoor : MonoBehaviour
     public bool open;
     public float smooth = 1.0f;
     public float DoorOpenAngle = -90.0f;
+    public int hasOpenedCount = 0; // Счетчик открытий двери
 
     [Header("Настройки ключа")]
     public string requiredItemName = "KeyCard";
@@ -84,23 +85,21 @@ public class LockedDoor : MonoBehaviour
 
     public void TryInteract()
     {
+        // Если дверь уже открыта, просто закрываем её
         if (open)
         {
             ToggleDoor();
             return;
         }
 
-        // Проверяем предмет через ПРЯМУЮ ссылку на инвентарь
-        if (playerInventory.currentItem != null)
+        // Проверяем: есть ли нужный ключ ИЛИ дверь уже открывалась ранее
+        bool hasKey = playerInventory.currentItem != null && playerInventory.currentItem.itemName == requiredItemName;
+        bool isAlreadyUnlocked = hasOpenedCount > 0;
+
+        if (hasKey || isAlreadyUnlocked)
         {
-            if (playerInventory.currentItem.itemName == requiredItemName)
-            {
-                ToggleDoor();
-            }
-            else
-            {
-                AccessDenied();
-            }
+            ToggleDoor();
+            hasOpenedCount++;
         }
         else
         {
